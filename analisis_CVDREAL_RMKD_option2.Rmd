@@ -1,0 +1,575 @@
+---
+title: "Characteristics and cardiovascular and mortality outcomes in patients with type 2 diabetes mellitus initiating treatment with sodium-glucose co-transporter-2 inhibitors and other diabetic medications"
+author: "Manel Mata, Bogdan Vlacho, Josep Franch & Jordi Real"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: true
+    fig_caption: true
+    css: logos_css/usr_styles.css
+    includes: 
+      in_header: header.html
+---
+
+&nbsp;
+<script>
+   $(document).ready(function() {
+     $head = $('#header');
+     $head.prepend('<img src=\"https://www.idiapjgol.org/images/logo.png\" style=\"float: right ;width: 130px;\"/>')
+     $head.prepend('<img src=\"https://avatars2.githubusercontent.com/u/57066591?s=200&v=4\" style=\"text-align: center;margin:auto;width: 80px;\"/>')
+   });
+</script>
+
+
+<div class="watermark">DRAFT</div>
+
+****
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list=ls())
+#memory.size(max=16000)
+library("SNPassoc")
+library("htmlwidgets")
+library("compareGroups")
+library("foreign")
+library("lattice")
+library("Hmisc")
+#library("ggplot2")
+library("pander")
+library("readxl")
+library("knitr")
+#library("rmarkdown")
+library("data.table")
+library("plyr")
+library("survminer")
+library("MatchIt")
+
+#  obrir fitxer salvat amb tots els objectes
+
+```
+
+# Estado
+
+## Actualizaciones
+
+> 09/2020
+
+&check; Nueva variable de hiperlipidemia según: (statinas) y /o colesterol total >200, y/o LDL>100, y/o HDL<40 para hombre y HDL<50 para mujeres y/o trigliceridos >150 <br/>
+&check; Añadidas variables en descriptiva baseline pre-post CAC y tiempo de seguimiento3. <br/>
+&check; 20 Forest- plot de HRs etc... <br/>
+&check; Arregladas figuras <br/>
+&check; Cambiada categoría de referenciaetc... <br/>
+
+## 5.1	Inclusion criteria.
+
+#Inclusion criteria are: OPTION 2
+
+New user receiving or dispensed prescription of SGLT-2i medication or other GLD, oral as well as injectable, including fixed-dose combination (FDC) products containing these medication groups (i.e. all ATC: A10 medications can be an index drug) 
+
+2. All new user dates are eligible to be included as a new user of SGLT-2 or oGLD (Dec 1rs 2013 - Dec 31 2016). Thus one patient might be included more than once in the analyses. (N=239,733) 
+
+- T2DM diagnosis on or prior to the index date. o As it can be assumed that all patients treated with ATC: A10 medication are in fact diabetes patients, this criteria might be relaxed if type 1 diabetes patients can be excluded in a proper way
+- >= 18 years old at index date (N=19 patients<18 years)
+- 1 year data history in the database prior to the index date (N=3569 <=1year data history)
+- Not dyalisis at baseline (N= 469 Yes dyalisis )
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+
+
+load("CVD_REAL_OPCIO2_v8.RData")
+
+
+```
+
+# 9.1    Propensity Scores output
+
+
+# Propensity results
+
+# Table 7. Variables to be considered for propensity score calculations. As a general rule, a "non-parsimonious" propensity score will be applied, as a consequence all relevant data that is available should be included. 
+
+For matching the following method is proposed: nearest neighbor caliper width of 0.25 multiplied by the standard deviation of the propensity score distribution (Stuart 2010). 
+
+
+We have used MatchIt package from R3.2 version (with nearest method and caliper with of 0.25 multiplied by the standard deviation of the propensity score distribution.
+
+Matchit is the main command of the package MatchIt, which enables parametric models for causal inference to work better by selecting well-matched subsets of the original treated and control groups. MatchIt implements the suggestions of Ho, Imai, King, and Stuart (2004) for improving parametric statistical models by preprocessing data with nonparametric matching methods. 
+
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+
+kable(m.out$model[1],caption="Logistic model used in the propensity score",digits=3) %>% kableExtra::kable_styling()
+kable(summary(m.out)$nn,caption="Summary table of matched data") %>% kableExtra::kable_styling()
+kable(summary(m.out)$sum.all,caption="Sum all",digits=4) %>% kableExtra::kable_styling()
+kable(summary(m.out)$sum.matched,caption="Sum.matched") %>% kableExtra::kable_styling()
+kable(summary(m.out)$reduction,caption="Reduction") %>% kableExtra::kable_styling()
+
+
+```
+
+# Frequency histogram of propensity score
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+PS_pre<-m.out$distance
+PS_post<-subset(m.out$distance,m.out$weights==1)
+
+print(summary(PS_pre))
+
+qplot(PS_pre, geom="histogram")+scale_x_continuous(name = "Propensity score")+ggtitle("Frequency histogram of propensity score pre matching")
+
+
+print(summary(PS_post))
+
+qplot(PS_post, geom="histogram")+scale_x_continuous(name = "Propensity score")+ggtitle("Frequency histogram of propensity score post matching")
+
+```
+
+## 10.	 Tables plan 
+
+## 10.1 Step 1.
+
+# Table 1-2. Baseline demographics, Lab values, medications, comorbidities (pre-match)
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+export2md(restab, caption="Table 1 Baseline demographics,lab values,medications and comorbidities (pre-match)")
+
+
+
+```
+
+
+## 10.	 Tables plan 
+
+# Table 3-7. Baseline demographics, Lab values, medications, comorbidities (post-match)
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+export2md(restabPS,caption="Table 2.Baseline demographics,lab values,medications and comorbidities (post-match)")
+
+export2md(taula1,caption="Table 3. Baseline demographics (post-match)" )
+
+export2md(taula2,caption="Table 4 Baseline lab values (post-match)")
+
+export2md(taula3,caption="Table 5 Baseline medications (post-match)")
+
+
+# invisible(gc())
+
+
+```
+
+
+# Table 9. Distribution of index medications post-match (ITT)
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+
+kable (FU_ISGLT2, caption="Number of patients and follow-up time (Years)",digits=2) %>% kableExtra::kable_styling()
+
+kable (FU_OAD,caption="Number of patients and follow-up time (Years)",digits=2) %>% kableExtra::kable_styling()
+
+
+
+
+```
+
+
+# Table 9. Distribution of index medications post-match (OT)
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+
+kable (FU_ISGLT2.OT, caption="Number of patients and follow-up time (Years)",digits=2) %>% kableExtra::kable_styling()
+
+kable (FU_OAD.OT,caption="Number of patients and follow-up time (Years)",digits=2) %>% kableExtra::kable_styling()
+
+
+
+
+```
+
+
+
+
+# Table 10. Event rates post-match
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+
+# export2md(taulaevents, caption="Table 10. Event rates post-match")
+
+export2md(restab_exitus, caption="All-cause death post-match OT")
+export2md(restab_exitus.ITT, caption="All-cause death post-match ITT")
+
+export2md(restab_HF, caption="Heart failure OT")
+export2md(restab_HF.ITT, caption="Heart failure ITT")
+
+export2md(restab_FA, caption="Atrial fibrillation OT")
+export2md(restab_FA.ITT, caption="Atrial fibrillation ITT")
+
+export2md(restab_ICTUS, caption="Stroke OT")
+export2md(restab_ICTUS.ITT, caption="Stroke ITT")
+
+export2md(restab_IMIO, caption="Myocardial infarction OT")
+export2md(restab_IMIO.ITT, caption="Myocardial infarction ITT")
+
+export2md(restab_EXITUS.HF, caption="All-casuse death or HHF OT")
+export2md(restab_EXITUS.HF.ITT, caption="All-casuse death or HHF ITT")
+
+export2md(restab_EV.ICTUS_ISQ, caption="Ischemic stroke OT")
+export2md(restab_EV.ICTUS_ISQ.ITT, caption="Ischemic stroke ITT")
+
+export2md(restab_EV.MACE.MOD, caption="modified MACE (All-cause death, MI or stroke) OT")
+export2md(restab_EV.MACE.MOD.ITT, caption="modified MACE (All-cause death, MI or stroke) ITT")
+
+export2md(restab_EV.CKD.OT, caption="Kidney disease OT")
+export2md(restab_EV.CKD.ITT, caption="Kidney disease ITT")
+
+```
+
+
+## 10.2 Step 2
+
+# Table 11. Crude Event rates per 100 PYs post-match
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+kable (resumtotal,caption="Crude Event rates per 100 PYs post-match",digits=2) %>% kableExtra::kable_styling()
+
+
+```
+
+
+# Table 12. Output from Cox regression models
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+
+kable (HRTOTALS,caption="Output from Cox regression models",digits=3) %>% kableExtra::kable_styling()
+
+kable (HRTOTALS_NOUS,caption="Output from Cox regression models",digits=3) %>% kableExtra::kable_styling()
+
+
+```
+
+
+
+# Forest plot de HR's por tipo de evento
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+
+# Funció forest.plot 
+
+forest.plot.HR<-function(dadesmodel=dt_estimacions,label="Categoria",mean="estimate",lower="Linf",upper="Lsup",label_X="OR (95% CI)",
+                         intercept=0,
+                         nivell="outcome", factor1="type",color=TRUE, label_Xvertical="Cardiovascular event") {
+
+  # dadesmodel=dt_temp
+  # label="grups"
+  # mean="HR"
+  # lower="IC951"
+  # upper="IC952"
+  # label_X="HR (95% CI)"
+  # intercept=1
+  # nivell="outcome"
+  # factor1="Method"
+  # color=F
+  # label_Xvertical="Cardiovascular event"
+
+  # Generar data set 
+  dadesmodel <- dadesmodel %>% select(valor=!!mean,Linf=!!lower,Lsup=!!upper,nivell=!!nivell, factor1=!!factor1)
+  
+  ## Preparar taula (Genero etiqueta)
+  taula_betas<-dadesmodel %>% mutate(etiqueta=paste0("     ",factor1),
+                                     Group = paste0(factor1))
+  
+  # Afegir fila com un punt nivell per outcome i genero label de group
+  taula_betas<-taula_betas %>% split(.$nivell) %>% 
+    map_dfr(~add_row(.x,.before = 0),.id = "outcome" ) %>% 
+    mutate (etiqueta2=if_else(is.na(etiqueta),outcome,"")) %>% 
+    mutate (etiqueta=if_else(is.na(etiqueta),outcome,etiqueta))
+  
+  # AFegir etiqueta 3 mes centrada
+  taula_betas<-taula_betas %>% mutate(etiqueta3=lag(etiqueta2),
+                                      etiqueta3=if_else(is.na(etiqueta3),"",etiqueta3))
+  
+  # Reordenar outcomes segons origen de taula inicial
+  dt_ordre<-dadesmodel %>% distinct(outcome=nivell) %>% mutate(seq=seq(1:n()))
+  taula_betas<-taula_betas %>% left_join(dt_ordre,by="outcome") %>% arrange(seq)
+  
+  # Generar id 
+  taula_betas<-taula_betas %>% mutate(id=seq(n())) %>% mutate(id=n()-id+1)
+  
+  # REomplir missings en factor1 i factor2
+  taula_betas<-taula_betas %>% fill(c(factor1,Group),.direction="updown")
+  
+  # Relevel mateix ordre tal com surt taula   
+  ordre_levels<-taula_betas %>% pull(Group) %>% unique()
+  taula_betas$Group<-factor(taula_betas$Group, levels = ordre_levels)
+  
+
+  fp <- ggplot(data=taula_betas,aes(x=id, y=valor, ymin=Linf, ymax=Lsup)) +
+    geom_pointrange(size=0.5) + 
+    geom_hline(yintercept=intercept, lty=1,colour="grey") +  # add a dotted line at x=1 after flip
+    coord_flip() +  # flip coordinates (puts labels on y axis)
+    xlab(label_Xvertical) + ylab(label_X) +
+    scale_x_continuous(breaks=taula_betas %>% pull(id),labels=taula_betas %>% pull(etiqueta))
+  
+  fp<-fp + theme_minimal() + theme(axis.text.y = element_text(hjust = 0,vjust=0,size=10)) 
+  
+  # if (color) {fp<-fp + geom_point(aes(color=Group),size=3)} else 
+  # {fp<-fp + geom_point(aes(shape=Group),size=3)}
+  
+  # Add banda d'error
+  # fp<-fp + geom_hline(yintercept = c(intercept+0.1,intercept-0.1),linetype=2)
+  
+  fp 
+  
+}
+
+```
+
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+# Preparar taula de HR per tipus
+
+# rbind(hr_exitusHF.resum,hr_ictus.isq.resum,hr_mace.mod.resum,hr_ckd.resum)
+
+dt_temp1<-
+  tibble::tibble (outcome="Heart failure",Method=c("ITT unadjusted", "ITT adjusted", "OT unadjusted", "OT adjusted"),ordre=1) %>%
+  dplyr::bind_cols(tibble::as.tibble(hr_ic.resum))
+
+dt_temp2<-
+  tibble::tibble (outcome="All-casuse death",Method=c("ITT unadjusted", "ITT adjusted", "OT unadjusted", "OT adjusted"),ordre=4) %>%
+  dplyr::bind_cols(tibble::as.tibble(hr_exitus.resum))
+
+dt_temp3<-
+  tibble::tibble (outcome="All-cause death or HHF",Method=c("ITT unadjusted", "ITT adjusted", "OT unadjusted", "OT adjusted"),ordre=2) %>%
+  dplyr::bind_cols(tibble::as.tibble(hr_exitusHF.resum))
+
+dt_temp4<-
+  tibble::tibble (outcome="Myocardial infarction",Method=c("ITT unadjusted", "ITT adjusted", "OT unadjusted", "OT adjusted"),ordre=5) %>%
+  dplyr::bind_cols(tibble::as.tibble(hr_mi.resum))
+
+dt_temp5<-
+  tibble::tibble (outcome="Stroke",Method=c("ITT unadjusted", "ITT adjusted", "OT unadjusted", "OT adjusted"),ordre=6) %>%
+  dplyr::bind_cols(tibble::as.tibble(hr_ictus.resum))
+
+dt_temp6<-
+  tibble::tibble (outcome="Ischemic stroke",Method=c("ITT unadjusted", "ITT adjusted", "OT unadjusted", "OT adjusted"),ordre=7) %>%
+  dplyr::bind_cols(tibble::as.tibble(hr_ictus.isq.resum))
+
+dt_temp7<-
+  tibble::tibble (outcome="modified MACE",Method=c("ITT unadjusted", "ITT adjusted", "OT unadjusted", "OT adjusted"),ordre=3) %>%
+  dplyr::bind_cols(tibble::as.tibble(hr_mace.mod.resum))
+
+dt_temp8<-
+  tibble::tibble (outcome="Kidney disease",Method=c("ITT unadjusted", "ITT adjusted", "OT unadjusted", "OT adjusted"),ordre=9) %>%
+  dplyr::bind_cols(tibble::as.tibble(hr_ckd.resum))
+
+dt_temp9<-
+  tibble::tibble (outcome="Atrial fibrillation",Method=c("ITT unadjusted", "ITT adjusted", "OT unadjusted", "OT adjusted"),ordre=8) %>%
+  dplyr::bind_cols(tibble::as.tibble(hr_fa.resum))
+
+
+
+library(dplyr)
+library(purrr)
+library(tidyr)
+dt_HR<-dt_temp1 %>% 
+  bind_rows(dt_temp2) %>% bind_rows(dt_temp3) %>% bind_rows(dt_temp4) %>% bind_rows(dt_temp5) %>% bind_rows(dt_temp6) %>% bind_rows(dt_temp7) %>%     
+  bind_rows(dt_temp8) %>% bind_rows(dt_temp9) %>% 
+  arrange(ordre)
+
+
+forest.plot.HR(dadesmodel=dt_HR,label="grups",mean="HR",lower="IC951",upper="IC952",label_X="HR (95% CI)",intercept=1,nivell="outcome",factor1="Method")
+
+# Dos Forest plot uno per ITT i OT
+dt_temp<-dt_HR %>% filter(Method=="OT unadjusted" | Method=="OT adjusted") %>% mutate(Method=stringr::str_remove(Method,"OT "))
+
+forest.plot.HR(dadesmodel=dt_temp,label="grups",mean="HR",lower="IC951",upper="IC952",label_X="HR (95% CI)",intercept=1,nivell="outcome",factor1="Method",label_Xvertical = "Outcome on treatment")
+
+
+dt_temp<-dt_HR %>% filter(Method=="ITT unadjusted" | Method=="ITT adjusted") %>% mutate(Method=stringr::str_remove(Method,"ITT "))
+forest.plot.HR(dadesmodel=dt_temp,label="grups",mean="HR",lower="IC951",upper="IC952",label_X="HR (95% CI)",intercept=1,nivell="outcome",factor1="Method",label_Xvertical = "Outcome intention to treat")
+
+
+
+```
+
+# Forest plot de HR's per subgrups per cada Outcome
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge",results="asis"}
+
+# forest.plot.HR(dadesmodel=dt_HR %>% filter(outcome=="Heart failure"),label="grups",mean="HR",lower="IC951",upper="IC952",label_X="HR (95% CI)",intercept=1,nivell="outcome",factor1="Method", label_Xvertical = "Subgroups" )
+
+
+# # Generar forest plot dels HR estratificats per un outcome 
+# 
+# HR.ESTR.TOTAL[1][[1]] %>%
+#   transmute(outcome="Heart failure ITT",
+#             label=rownames(.) %>% stringr::str_replace("Adj1|Adj2",""),
+#             grups=stringr::str_remove(Subgroup,"Age|CKD"),
+#             label=paste0(label,":",grups),
+#             grups=label,
+#             HR,IC951,IC952) %>%
+#   forest.plot.HR(label="label",mean="HR",lower="IC951",upper="IC952",label_X="HR (95% CI)",intercept=1,nivell="outcome",factor1="grups",label_Xvertical = "Subgroups")
+
+
+
+# Generar tots els forest plot per cada outcome
+HR.ESTR.TOTAL %>% 
+  map(~ transmute(.x,label=rownames(.) %>% stringr::str_replace("Adj1|Adj2",""),
+                                  grups=stringr::str_remove(Subgroup,"Age|CKD"),
+                                  label=paste0(label,":",grups),
+                                  grups=label,HR,IC951,IC952)) %>% 
+  map(~ mutate (.x,outcome=pull(.x,label)[[1]] %>% stringr::str_remove(":Total"))) %>% 
+  map(~ forest.plot.HR(.x,label="label",mean="HR",lower="IC951",upper="IC952",label_X="HR (95% CI)",intercept=1,nivell="outcome",factor1="grups",label_Xvertical = "Subgroups")) %>% 
+  print() 
+
+
+```
+
+
+#  Kaplan-Meier Plot by Treatment Group by each endpoint 
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+
+##############      K-M   plot     #####
+plotKM=function(y=c("temps.otd","exitus.otd"),dt=dades) {
+  
+  # y=llistaevents[[2]]
+  # dt=dades
+  # y=c("temps.otd","exitus.otd")
+  
+  y<-unlist(y,use.names = F)
+  
+  temps=sym(y[[1]])
+  event=sym(y[[2]])
+  caption=Hmisc::label(dt[[y[2]]])
+  
+  dt<-dt %>% select(grup,temps=!!temps,event=!!event) %>% mutate(event=(event=="Yes") %>% as.numeric())
+  
+  fit<- survival::survfit(survival::Surv(temps,event) ~ grup, data = dt) 
+  
+  
+  # Basic survival curves
+  p <- survminer::ggsurvplot(fit, data = dt,
+                  main = "Survival curve",
+                  title= caption,
+                  size = 0.5,
+                  ylim = c(0.95,1),
+                  xlim = c(0,365),
+                  break.x.by=90,
+                  xlab = "Time in days",
+                  risk.table = F,
+                  censor.shape="|", censor.size = 1,
+                  legend.labs=c("oGLD","SGLT-2")) 
+  p
+}
+
+
+
+
+
+
+########################################################
+
+#
+####                        K.M DE TOTS ELS EVENTS                  ####
+
+
+llistaevents %>% map(~plotKM(.x))
+
+
+
+
+```
+
+
+
+# Sensitivity analyses / Subgroup analyses
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+
+
+# nevents<-length(llistaevents)
+# cap <- sapply(1:nevents, function(x) row.names(HR.ESTR.TOTAL[[x]])[1])
+# kable(HR.ESTR.TOTAL[1:nevents],caption=cap[1:nevents],digits=3)
+
+kable(HR.ESTR.TOTAL[1],caption=row.names(HR.ESTR.TOTAL[[1]])[1],digits=3) %>% kableExtra::kable_styling()
+kable(HR.ESTR.TOTAL[2],caption=row.names(HR.ESTR.TOTAL[[2]])[1],digits=3) %>% kableExtra::kable_styling()
+kable(HR.ESTR.TOTAL[3],caption=row.names(HR.ESTR.TOTAL[[3]])[1],digits=3) %>% kableExtra::kable_styling()
+kable(HR.ESTR.TOTAL[4],caption=row.names(HR.ESTR.TOTAL[[4]])[1],digits=3) %>% kableExtra::kable_styling()
+kable(HR.ESTR.TOTAL[5],caption=row.names(HR.ESTR.TOTAL[[5]])[1],digits=3) %>% kableExtra::kable_styling()
+kable(HR.ESTR.TOTAL[6],caption=row.names(HR.ESTR.TOTAL[[6]])[1],digits=3) %>% kableExtra::kable_styling()
+kable(HR.ESTR.TOTAL[7],caption=row.names(HR.ESTR.TOTAL[[7]])[1],digits=3) %>% kableExtra::kable_styling()
+kable(HR.ESTR.TOTAL[8],caption=row.names(HR.ESTR.TOTAL[[8]])[1],digits=3) %>% kableExtra::kable_styling()
+kable(HR.ESTR.TOTAL[9],caption=row.names(HR.ESTR.TOTAL[[9]])[1],digits=3) %>% kableExtra::kable_styling()
+kable(HR.ESTR.TOTAL[10],caption=row.names(HR.ESTR.TOTAL[[10]])[1],digits=3) %>% kableExtra::kable_styling()
+kable(HR.ESTR.TOTAL[11],caption=row.names(HR.ESTR.TOTAL[[11]])[1],digits=3) %>% kableExtra::kable_styling()
+kable(HR.ESTR.TOTAL[12],caption=row.names(HR.ESTR.TOTAL[[12]])[1],digits=3) %>% kableExtra::kable_styling()
+kable(HR.ESTR.TOTAL[13],caption=row.names(HR.ESTR.TOTAL[[13]])[1],digits=3) %>% kableExtra::kable_styling()
+kable(HR.ESTR.TOTAL[14],caption=row.names(HR.ESTR.TOTAL[[14]])[1],digits=3) %>% kableExtra::kable_styling()
+kable(HR.ESTR.TOTAL[15],caption=row.names(HR.ESTR.TOTAL[[15]])[1],digits=3) %>% kableExtra::kable_styling()
+kable(HR.ESTR.TOTAL[16],caption=row.names(HR.ESTR.TOTAL[[16]])[1],digits=3) %>% kableExtra::kable_styling()
+kable(HR.ESTR.TOTAL[17],caption=row.names(HR.ESTR.TOTAL[[17]])[1],digits=3) %>% kableExtra::kable_styling()
+kable(HR.ESTR.TOTAL[18],caption=row.names(HR.ESTR.TOTAL[[18]])[1],digits=3) %>% kableExtra::kable_styling()
+
+
+
+
+
+
+
+```
+
+
+```{r}
+
+# Salvar objectes per shiny 
+
+
+dades<-dades %>% select(idp,grup,llistaevents %>% unlist(use.names = F))
+
+save(dades,dt_HR,HR.ESTR.TOTAL,llistaevents, file=here::here("shiny/dades","data_shiny.Rdata"))
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

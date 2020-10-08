@@ -5,6 +5,17 @@
 # Session Data files
 .RData
 
+
+# Dades y resultats
+/dades
+/Resultats
+/temp
+
+.Html
+.html
+*.Html
+*.html
+
 # User-specific files
 .Ruserdata
 
