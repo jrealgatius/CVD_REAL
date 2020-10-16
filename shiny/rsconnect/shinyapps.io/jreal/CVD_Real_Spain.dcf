@@ -1,12 +1,13 @@
-name: CVD_Real_Spain
-title: CVD_Real_Spain
+name: CVD_REAL_Spain
+title: CVD_REAL_Spain
 username:
 account: jreal
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
-appId: 2961521
-bundleId: 3712070
-url: https://jreal.shinyapps.io/CVD_Real_Spain/
-when: 1602061966.00491
+appId: 3034121
+bundleId: 3750141
+url: https://jreal.shinyapps.io/CVD_REAL_Spain/
+when: 1602877594.93997
 asMultiple: FALSE
 asStatic: FALSE
+ignoredFiles: lectura_dades_shiny.html|lectura_dades_shiny.Rmd|temp/funcions_plots.R

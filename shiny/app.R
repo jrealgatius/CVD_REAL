@@ -5,19 +5,6 @@
 # This is a Shiny web application. You can run the application by clicking
 # the 'Run App' button above.
 #
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#    https://rinterface.com/shiny/shinydashboardPlus/
-#
-#
-#
-#
-#
-#
-#  
-
-#
 
 #  Llibreries necessaries
 
@@ -26,14 +13,15 @@ library(ggplot2)
 library(dplyr)
 library(purrr)
 library(tidyr)
-
+library(Hmisc)
 
 # Carrega de dades i funcions
-# load("dades/data_shiny.Rdata")
+# load(here::here("shiny","data_shiny.Rdata"))
+# source(here::here("shiny","funcions_plots.R"))
 
-load(here::here("shiny/dades","data_shiny.Rdata"))
+load("data_shiny.Rdata")
 
-source(here::here("shiny","funcions_plots.R"))
+source("funcions_plots.R")
 
 # 1. Funcio per triar metode --------------
 
@@ -43,7 +31,7 @@ source(here::here("shiny","funcions_plots.R"))
 forest.plot.choice<-function(metode=c("ITT","OT","unadjusted")){
 
     #metode<-c("adjusted")
-    dt_temp<-dt_HR %>% filter(stringr::str_detect(Method,paste0(metode,collapse = "|")))
+    dt_temp<-dt_HR %>% dplyr::filter(stringr::str_detect(Method,paste0(metode,collapse = "|")))
     forest.plot.HR(dadesmodel=dt_temp,label="grups",mean="HR",lower="IC951",upper="IC952",label_X="Favors SGLT-2      HR (95% CI)       Favors oGLD-2",
                    intercept=1,nivell="outcome",factor1="Method",
                    label_Xvertical = "Outcome", color = T)  
@@ -86,7 +74,7 @@ graficar_KM_outcome<-function(outcome_nom="All-cause death OTD") {
     
     #outcome_nom="All-cause death OTD"
     
-    plotKM(llistaevents[[outcome_nom]])
+    plotKM(llistaevents[[outcome_nom]],dades)
     
     }
 

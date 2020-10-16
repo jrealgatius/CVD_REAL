@@ -1,11 +1,9 @@
 ### Funcions 
 
 
-#Canvi de funci? pel t?tol!!! 
-
 # Funcio.forest.plot 
 
-forest.plot.HR<-function(dadesmodel=dt_estimacions,label="Categoria",mean="estimate",lower="Linf",upper="Lsup",label_X="OR (95% CI)",
+forest.plot.HR<-function(dadesmodel,label="Categoria",mean="estimate",lower="Linf",upper="Lsup",label_X="OR (95% CI)",
                          intercept=1,
                          nivell="outcome", factor1="type",color=TRUE, label_Xvertical="Cardiovascular event") {
   
@@ -83,22 +81,19 @@ plotKM=function(y=c("temps.otd","exitus.otd"),dt=dades) {
   # y=llistaevents[[2]]
   # dt=dades
   # y=c("temps.otd","exitus.otd")
-  
+
   y<-unlist(y,use.names = F)
   
-  temps=sym(y[[1]])
-  event=sym(y[[2]])
+  temps=dplyr::sym(y[[1]])
+  event=dplyr::sym(y[[2]])
   caption=Hmisc::label(dt[[y[2]]]) 
   
-  dt<-dt %>% select(grup,temps=!!temps,event=!!event) %>% mutate(event=(event=="Yes") %>% as.numeric())
+  dt<-dt %>% dplyr::select(grup,temps=!!temps,event=!!event) %>% mutate(event=(event=="Yes") %>% as.numeric())
   
   fit<- survival::survfit(survival::Surv(temps,event) ~ grup, data = dt) 
   
   
   # Basic survival curves
-  
- 
-  
   
   p <- survminer::ggsurvplot(fit, data = dt,
                              main = "Survival curve",
@@ -111,10 +106,9 @@ plotKM=function(y=c("temps.otd","exitus.otd"),dt=dades) {
                              risk.table = F,
                              censor.shape="|", censor.size = 1,
                              legend.labs=c("oGLD","SGLT-2")) +labs(
-                               title = "Survival curves",                     
-                               subtitle = "Based on Kaplan-Meier estimates" ,  
-                               caption = "created by Jordi Real & Rai Puig "  
-                             )
+                               title = paste0(caption),                     
+                               subtitle = "Survival curve based on Kaplan-Meier estimates"   
+                                 )
   p
 }
 
