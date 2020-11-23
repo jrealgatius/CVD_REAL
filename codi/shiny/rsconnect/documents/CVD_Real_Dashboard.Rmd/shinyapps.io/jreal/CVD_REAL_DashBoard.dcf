@@ -1,0 +1,12 @@
+name: CVD_REAL_DashBoard
+title: CVD_REAL_DashBoard
+username:
+account: jreal
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3253704
+bundleId: 3873437
+url: https://jreal.shinyapps.io/CVD_REAL_DashBoard/
+when: 1605652495.86447
+asMultiple: FALSE
+asStatic: FALSE

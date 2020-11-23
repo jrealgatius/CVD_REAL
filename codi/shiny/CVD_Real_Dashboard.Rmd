@@ -1,0 +1,264 @@
+---
+title: "**CVD-Real Spain**"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: cerulean
+    social: menu
+    # logo: "logo_dapcat.png"
+    # favicon: "logo_dapcat.png"
+    # css: styles.css
+runtime: shiny
+---
+
+
+```{r global, include=FALSE}
+# load data in 'global' chunk so it can be shared by all users of the dashboard
+library(flexdashboard)
+library(shiny)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(plotly)
+# library(datasets)
+# library(Hmisc)
+# library(purrr)
+
+load("dades_shiny_flex.Rdata")
+dades<-readRDS("dades_compres.Rds")
+
+source("funcions_plots.R")
+
+
+```
+
+
+```{r setup, include=FALSE}
+# 1. Funcio per triar metode --------------
+
+# Parametres a triar forest plot global sensibility analisis: 
+# All, ITT/ OT , unadjusted / adjusted
+
+forest.plot.choice<-function(metode=c("ITT","OT","unadjusted")){
+
+    # metode<-c("adjusted")
+    
+    dt_temp<-dt_HR %>% dplyr::filter(stringr::str_detect(Method,paste0(metode,collapse = "|")))
+    fig<-forest.plot.HR(dadesmodel=dt_temp,label="grups",mean="HR",lower="IC951",upper="IC952",label_X="Hazard ratio (95% CI)",
+                   intercept=1,nivell="outcome",factor1="Method",
+                   label_Xvertical = "Outcome", color = T,nolabels=T)  
+    # fig
+    plotly::ggplotly(fig,height=600)
+    
+    }
+    
+
+# 2. Funcio per triar plot OUTCOME i HR stratificats ------------
+
+# Forest plot de HR estratificats
+
+# generar llista de noms de HR.ESTR.TOTAL
+vectordenoms<-HR.ESTR.TOTAL %>% purrr::map(~ rownames(.x)[1]) %>% unlist() 
+# nomenar-los
+HR.ESTR.TOTAL<-purrr::set_names(HR.ESTR.TOTAL,vectordenoms)
+
+forest.plot.choice.strat<-function(outcome_nom="All-cause death OTD") {
+    
+    # outcome_nom="All-cause death OTD"
+    
+    dt_fig<-HR.ESTR.TOTAL[[outcome_nom]] %>% 
+        filter(!is.na(HR) & EVENTS>1 & se.coef>0) %>% 
+        transmute(outcome=outcome_nom,
+                  label=rownames(.) %>% stringr::str_replace("Adj1|Adj2",""),
+                  grups=stringr::str_remove(Subgroup,"Age|CKD"),
+                  label=paste0(label,":",grups),
+                  grups=label,
+                  HR,IC951,IC952)
+    
+    fig<-dt_fig %>% forest.plot.HR(label="label",mean="HR",lower="IC951",upper="IC952",label_X="Hazard ratio (95% CI)",
+                       intercept=1,nivell="outcome",factor1="grups",label_Xvertical = "Subgroups", color=F,nolabels=F)
+    
+    valorsHR<-dt_fig %>% pull(HR)
+    
+    # Afegit linea vertical i un punt
+    fig + geom_hline(yintercept=valorsHR[1], lty=2,colour="black") +
+      geom_point(aes(x=length(valorsHR),y=valorsHR[1]), color="blue", shape=17, size=4, fill="black")
+    
+    }
+
+
+# 3. Funcio per triar KM en funcio d'outcome  -----------------
+llistaevents<-purrr::set_names(llistaevents,vectordenoms)
+
+graficar_KM_outcome<-function(outcome_nom="All-cause death OTD") {
+    
+    #outcome_nom="All-cause death OTD"
+    
+    plotKM(llistaevents[[outcome_nom]],dades)
+    
+    }
+
+
+
+
+```
+
+
+Column {.sidebar data-width=300}
+==========================
+
+#### *Suplementary material*
+
+<br/>
+
+<img src="logo_dapcat.png" align = "right" width =  "90" height = "50" vertical-align: top />
+
+[<img src = "https://www.idiapjgol.org/images/logo.png" align = "center" width =  "90" height = "50" />](https://www.idiapjgol.org)
+
+
+<br/>
+
+
+### Characteristics and cardiovascular and mortality outcomes in patients with type 2 diabetes mellitus initiating treatment with sodium-glucose co-transporter-2 inhibitors and other diabetic medications
+
+
+<br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+
+The source code is available at [github/jrealgatius](https://github.com/jrealgatius/CVD_REAL_OP2)
+
+by [Jordi Real](https://github.com/jrealgatius/CV/blob/master/Jordi%20Real%E2%80%99s%20CV.pdf)
+
+jreal@idiapjgol.info 
+
+
+Forest plot {data-width=200}
+================================
+
+#### Forest plot according method
+
+For the sensitivity analysis, an On treatment (OT), intent-to-treat (ITT) and adjusted approach was assessed: 
+
+- OT: On treatment approach, patients was followed from index date (excluding) to the earliest of end of use of the index medication group, migration/leaving the practice/leaving the database, last date of data collection, death date <br/>
+
+- ITT: In the intent-to-treat approach, subjects continued the study follow-up even after they discontinued their index treatment or switched to another treatment. <br/>
+
+- Adjusted / unadjusted: Hazard ratios (HR) were estimated also adjusted for gender, age, T2DM duration, hypertension, body mass index, and antihypertensive drugs <br/>
+
+
+
+
+```{r}
+selectInput("metode1",label="Choice the method :", choices= c("ITT","OT","unadjusted"," adjusted"),multiple = F)
+```
+
+
+```{r}
+
+# renderPlot({forest.plot.choice(input$metode1)},height = 500)
+
+plotly::renderPlotly({forest.plot.choice(input$metode1)})
+
+
+```
+
+
+Incidence curves {data-width=200}
+======================================
+
+#### Incidence curves according outcome
+
+During the follow-up (OTD and ITT follow-up), we colected data on events, single outcomes: heart failure, all-cause mortality, atrial fibrillation, stroke, ischemic stroke, myocardial infarction and chronic kidney disease. We also analysed composite outcomes such as: a) All-cause mortality or heart failure, and b)  all-cause mortality, myocardial infarction or stroke, called modified MACE outcome
+
+```{r}
+
+# options(bitmapType='cairo')
+
+selectInput("metode2",label="Choice the outcome :", choices= names(llistaevents)   ,multiple = F)
+
+renderPlot({graficar_KM_outcome(input$metode2)},
+           height = 600)
+
+
+
+```
+
+Forest plot by subgrups
+====================================
+
+#### Sub-group analysis
+
+Additional analyses in order to check the robustness of the results include the exclusion of certain drug classes from the oGLD group and subgroup analysis: \n
+
+Sub-group analysis was performed within several pre-specified subgroups such as the presence/absence of prior CV disease, prior heart failure, ±65 yrs age at index, gender, prior kidney disease, and presence/absence at baseline of antihypertensive drugs, insulin, sulfonylureas and statins.
+
+
+```{r}
+
+
+selectInput("metode3",label="Choice the outcome :", choices= names(llistaevents)   ,multiple = F)
+
+
+renderPlot({forest.plot.choice.strat(input$metode3)},height = 600)
+
+
+```
+
+
+Covariate plot
+=================================
+
+#### Balance improve assessment after matching
+
+We used a propensity score approach to assess the possible imbalances in baseline covariates between treatment groups.
+From the total subjects, about 13,281 (5.5%) initiated antidiabetic treatment with a SGLT-2i. By applying propensity score matching 1:1, we evaluated 25,834 patients, 12,917 in each cohort. After matching, we obtained well-balanced cohorts for the patients' baseline characteristics with standardised differences for all of the variables less than 10% 
+
+
+
+```{r,fig.height = 6.5, fig.width = 7}
+
+# knitr::include_graphics("fig.covariate.png")
+# fig.covariate + ggplot2::ggtitle("oGLD vs SGLT-2i group")+ ggplot2::theme_minimal() +
+#   ggplot2::theme(legend.position = "top")
+
+covariate_plot_dades(dades_covariate,var="name",stat="stat",title="oGLD vs SGLT-2i group", labx="Standardized mean difference") %>%  plotly::ggplotly(height = 650) 
+
+
+# ggplot2::ggtitle("oGLD vs SGLT-2i group")+ ggplot2::theme_minimal() +
+#    ggplot2::theme(legend.position = "top") 
+  
+
+
+```
+
+
+
+
+About
+=============================
+
+#### Authors and affiliations 
+
+Authors: Jordi Real (JR), Bogdan Vlacho (BV), Emilio Ortega (EO), Joan Valles (JV), Manel Mata-Cases (MM), Esmeralda Castelblanco (EC),Dídac Mauricio (DM), Josep Franch-Nadal (JF)
+
+Affiliations
+
+- DAP-Cat group, Unitat de Suport a la Recerca Barcelona, Fundació Institut Universitari per a la recerca a l'Atenció Primària de Salut Jordi Gol i Gurina (IDIAPJGol), Barcelona, Spain;
+- CIBER of Diabetes and Associated Metabolic Diseases (CIBERDEM), Instituto de Salud Carlos III (ISCIII), Spain 
+- Primary Health Care Center Raval Sud, Gerència d’Atenció Primaria, Institut Català de la Salut, Barcelona, Spain
+- Primary Health Care Center La Mina, Gerència d’Àmbit d’Atenció Primària Barcelona Ciutat, Institut Català de la Salut, Sant Adrià de Besòs, Spain 
+- CIBER of physiopathology of obesity and Nutrition (CIBEROBN), Instituto de Salud Carlos III (ISCIII), Spain 
+- Department of Endocrinology and Nutrition, Hospital Universitari de la Santa Creu i Sant Pau, Autonomous Universtity of Barcelona, Barcelona, Spain 
+- Departament of Medicine,University of Vic - Central University of Catalonia, Vic, Barcelona, Spain.
+
+
+Correspondence: josep.franch@gmail.com; didacmauricio@gmail.com; jreal@idiapjgol.info 
+
+
+Author Contributions: Conceptualisation: JF, DM, MM and JR; methodology and design: JR; formal analysis: JR; resources and data curation: VB and JR.; writing—original draft preparation. EC and BV.; writing—review and editing: EM, BV, EO, DM, MM & JV; supervision: JF and DM; project administration. BV and JF; funding acquisition: JF
+
+
+```{r}
+
+
+
+```
+

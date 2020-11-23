@@ -1,0 +1,13 @@
+name: CVDREAL_SPAIN_DASHBOARD
+title: CVDREAL_SPAIN_DASHBOARD
+username:
+account: jreal
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3248878
+bundleId: 3870764
+url: https://jreal.shinyapps.io/CVDREAL_SPAIN_DASHBOARD/
+when: 1605609142.51222
+asMultiple: TRUE
+asStatic: FALSE
+ignoredFiles: lectura_dades_shiny.Rmd

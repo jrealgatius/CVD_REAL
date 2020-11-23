@@ -1,0 +1,12 @@
+name: CVD_REAL
+title: CVD_REAL
+username:
+account: dapcat
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3282226
+bundleId: 3894288
+url: https://dapcat.shinyapps.io/CVD_REAL/
+when: 1606122588.86032
+asMultiple: FALSE
+asStatic: FALSE

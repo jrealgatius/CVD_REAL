@@ -1,24 +1,22 @@
 ### Funcions 
 
+# Funció forest.plot 
 
-# Funcio.forest.plot 
-
-forest.plot.HR<-function(dadesmodel,label="Categoria",mean="estimate",lower="Linf",upper="Lsup",label_X="OR (95% CI)",
-                         intercept=1,
+forest.plot.HR<-function(dadesmodel=dt_estimacions,label="Categoria",mean="estimate",lower="Linf",upper="Lsup",label_X="OR (95% CI)",
+                         intercept=0,
                          nivell="outcome", factor1="type",color=TRUE, label_Xvertical="Cardiovascular event") {
   
-
-  # dadesmodel=dt_HR
+  # dadesmodel=dt_temp
   # label="grups"
   # mean="HR"
   # lower="IC951"
   # upper="IC952"
-  # label_X="Favors SGLT-2   HR (95% CI)    Favors oGLD-2"
+  # label_X="HR (95% CI)"
   # intercept=1
   # nivell="outcome"
   # factor1="Method"
-  # color=T
-  # label_Xvertical="Outcome"
+  # color=F
+  # label_Xvertical="Cardiovascular event"
   
   # Generar data set 
   dadesmodel <- dadesmodel %>% select(valor=!!mean,Linf=!!lower,Lsup=!!upper,nivell=!!nivell, factor1=!!factor1)
@@ -59,10 +57,7 @@ forest.plot.HR<-function(dadesmodel,label="Categoria",mean="estimate",lower="Lin
     xlab(label_Xvertical) + ylab(label_X) +
     scale_x_continuous(breaks=taula_betas %>% pull(id),labels=taula_betas %>% pull(etiqueta))
   
-  fp<-fp + theme_minimal() + theme(axis.text.y = element_text(hjust = 0,vjust=0,size=10)) +labs(
-    title = "Forest plot")
-  
-  # caption = "SGLT-2: sodium-glucose co-transporter-2 inhibitors | oGLD-2 \n created by Jordi Real & Rai Puig "           )
+  fp<-fp + theme_minimal() + theme(axis.text.y = element_text(hjust = 0,vjust=0,size=10)) 
   
   # if (color) {fp<-fp + geom_point(aes(color=Group),size=3)} else 
   # {fp<-fp + geom_point(aes(shape=Group),size=3)}
@@ -75,26 +70,27 @@ forest.plot.HR<-function(dadesmodel,label="Categoria",mean="estimate",lower="Lin
 }
 
 
+
+
 ##############      K-M   plot     #####
 plotKM=function(y=c("temps.otd","exitus.otd"),dt=dades) {
   
   # y=llistaevents[[2]]
   # dt=dades
   # y=c("temps.otd","exitus.otd")
-
+  
   y<-unlist(y,use.names = F)
   
-  temps=dplyr::sym(y[[1]])
-  event=dplyr::sym(y[[2]])
-  caption=Hmisc::label(dt[[y[2]]]) 
+  temps=sym(y[[1]])
+  event=sym(y[[2]])
+  caption=Hmisc::label(dt[[y[2]]])
   
-  dt<-dt %>% dplyr::select(grup,temps=!!temps,event=!!event) %>% mutate(event=(event=="Yes") %>% as.numeric())
+  dt<-dt %>% select(grup,temps=!!temps,event=!!event) %>% mutate(event=(event=="Yes") %>% as.numeric())
   
   fit<- survival::survfit(survival::Surv(temps,event) ~ grup, data = dt) 
   
   
   # Basic survival curves
-  
   p <- survminer::ggsurvplot(fit, data = dt,
                              main = "Survival curve",
                              title= caption,
@@ -105,10 +101,7 @@ plotKM=function(y=c("temps.otd","exitus.otd"),dt=dades) {
                              xlab = "Time in days",
                              risk.table = F,
                              censor.shape="|", censor.size = 1,
-                             legend.labs=c("oGLD","SGLT-2")) +labs(
-                               title = paste0(caption),                     
-                               subtitle = "Survival curve based on Kaplan-Meier estimates"   
-                                 )
+                             legend.labs=c("oGLD","SGLT-2")) 
   p
 }
 

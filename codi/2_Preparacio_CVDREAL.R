@@ -19,16 +19,22 @@ library("plyr")
 library("survminer")
 library(dplyr)
 
-source("funcions_CVDREAL.R")
+source(here::here("codi","funcions_CVDREAL.R"))
 
 
-
-############################      FI GENERAR FUNCION           ######################
 #
 ####                                  Llegir dades    #####
-dades<-read.spss('dades/DBPACIENTSN239733_v9.sav',use.value.labels = TRUE,to.data.frame=TRUE,trim_values=TRUE)
+dades<-read.spss(here::here("dades","DBPACIENTSN239733_v9.sav"),use.value.labels = TRUE,to.data.frame=TRUE,trim_values=TRUE)
 dades<-data.table(dades)
 
+
+# Cambiar de levels
+table(dades$tempsdm_cat4)
+table(dades$CKD.COMBI)
+levels(dades$tempsdm_cat4)<-c("<5","5-10","11-20",">20") 
+levels(dades$CKD.COMBI)<-c("No","FG<60 or CAC>30")
+table(dades$tempsdm_cat4)
+table(dades$CKD.COMBI)
 
 # Generar noves variables ----
 
@@ -46,32 +52,29 @@ dades<-dades %>% mutate(Dislipemia=case_when(FX.ESTATINAS=="Yes"~"Yes",
                               val_last.COLHDL<50 & sexe=="Female"~"Yes",
                               TRUE~"No"            )) 
 
-
 ##
 ##  afago mostra  ###
 #
 # dades<-dades[1:50000,]
 ##                                              ###
 dadestotal<-dades
-dadestotal<-etiquetar(dadestotal,taulavariables="variables_R.xls")
+dadestotal<-etiquetar(dadestotal,taulavariables=here::here('VARIABLES_R.xls'))
 
 ####  Llegir etiquetes i variables a analitzar ####
-variables <- read_excel('VARIABLES_R.xls')
+variables <- read_excel(here::here('VARIABLES_R.xls'))
 variables[is.na(variables)]<- 0
 #
 #
 ##########################        Baseline             ###################
-dades<-selectorvariables("Baseline",taulavariables = "variables_R.xls",dt=dades)
+dades<-selectorvariables("Baseline",taulavariables = here::here('VARIABLES_R.xls'),dt=dades)
 
 ################################        COMPARE GRUPS       #########################
-res <- compareGroups(grup ~ .-idp, data=dades,include.miss = F,include.label=T)
+res <- compareGroups(grup ~ .-idp, data=dades,include.miss = F)
 restab<-createTable(res, show.ratio = F, hide.no = c('NA','No'), show.p.overall=F,show.n=T,show.all=T)
-restab
-
 
 #################     propensity            ########################################################
 #### selector de dades segons propensity   ######
-dades<-selectorvariables(taula="propensity",taulavariables="variables_R.xls",dt=dadestotal)
+dades<-selectorvariables(taula="propensity",taulavariables=here::here('VARIABLES_R.xls'),dt=dadestotal)
 
 ##########  MATCHIT #################################################
 set.seed(123)
@@ -93,8 +96,6 @@ PS_post<-subset(m.out$distance,m.out$weights==1)
 sd(PS_pre)*0.25
 sd(PS_post)*0.25
 
-
-
 #########################     FI MATCHING                 ###########
 ###       AGREGO VARIABLES A TAULA TOTAL    ###
 ###   afegeixo a dadestotal la variable PS 
@@ -104,15 +105,14 @@ dadestotal<-data.table(dadestotal,ps=m.out$weights)
 ### actualitzo descriptiu nomes amb mostra PS 
 ################################        COMPARE GRUPS       #########################
 ##  SELECT 
-dades<-subset(dadestotal,ps==1)
+dades<-dadestotal %>% dplyr::filter(ps==1)
 
 
 restabPS<-update(restab, x = update(res, grup ~ .-FX.MET_SGTL2 , subset = ps==1))
-#
-#
-restabPS
 
-####      la funci? formula genera la formula per fer el compare    ###
+# restabPS<-compareGroups::descrTable(cohort ~ .-idp,data=dades,hide.no = c('NA','No'), show.p.overall=F,show.n=T,show.all=T)
+
+
 #
 #####     fer el Compare per taula1 taula2 taula3
 res <- compareGroups(formula("taula1"), data=dades,include.miss = F,include.label=T)
@@ -459,14 +459,15 @@ variables[variables$estratificat==1,]$descripcio
 ###############       LLISTAT DE TOTS ELS EVENTS                ########### 
 
 ####  far? una llista de noms de variables surv i temps      ##############
-llistaevents<-list(exit.otd=c("temps.otd","exitus.otd"),
+llistaevents<-list(
+             exit.otd=c("temps.otd","exitus.otd"),
              exit.itt=c("temps","exitus"),
              ic.otd=c("tmp_insuf_card.OTD","EV.INSUF_CARD.OTD"),
              ic.itt=c("tmp_insuf_card","EV.INSUF_CARD"),
              fa.otd=c("tmp_fa.OTD","EV.FA.OTD"),
-             fa.itt=c("tmp_ictus","EV.ICTUS"),
+             fa.itt=c("tmp_fa","EV.FA"),
              ictus.otd=c("tmp_ictus.OTD","EV.ICTUS.OTD"),
-             ictus.itt=c("tmp_fa","EV.FA"),
+             ictus.itt=c("tmp_ictus","EV.ICTUS"),
              mi.otd=c("tmp_cvd_inf_mio.OTD","EV.CVD_INF_MIO.OTD"),
              mi.itt=c("tmp_CVD_INF_MIO","EV.CVD_INF_MIO"),
              exitushf.otd=c("tmp_exitus.hf.otd","EV.EXITUS.HF.OTD"),
@@ -478,6 +479,8 @@ llistaevents<-list(exit.otd=c("temps.otd","exitus.otd"),
              ckd.mod.otd=c("tmp_ckd.otd","EV.CKD.OTD"),
              ckd.mod.itt=c("tmp_ckd","EV.CKD"))
 #
+dtframe_events<-tibble::tibble(event=extreure.variables(taula="event",taulavariables=here::here('VARIABLES_R.xls')),
+              temps=extreure.variables(taula="temps",taulavariables=here::here('VARIABLES_R.xls')))
 
 # afegire la resta d'events 8 mes 
 
@@ -486,33 +489,23 @@ llistaevents<-list(exit.otd=c("temps.otd","exitus.otd"),
 ####      event --> llistaevents[[1]][1] , temps --> llistaevents[[1]][2]
 # exitus.ot.estrat<-HRestratificats(event=llistaevents[[1]][2],t=llistaevents[[1]][1],tipo="v.ajust")
 
-
 exitus.ot.estrat<-HRestratificats(event="exitus.otd",t="temps.otd",tipo="v.ajust",c=clusters)
-
 EV.INSUF_CARD.ot.estrat<-HRestratificats(event="EV.INSUF_CARD.OTD",t="tmp_insuf_card.OTD",tipo="v.ajust",c=clusters)
-
 EV.FA.OTD.estrat<-HRestratificats(event="EV.FA.OTD",t="tmp_fa.OTD",tipo="v.ajust",c=clusters)
-
 EV.ICTUS.OTD.estrat<-HRestratificats(event="EV.ICTUS.OTD",t="tmp_ictus.OTD",tipo="v.ajust",c=clusters)
-
 EV.CVD_INF_MIO.OTD.estrat<-HRestratificats(event="EV.CVD_INF_MIO.OTD",t="tmp_cvd_inf_mio.OTD",tipo="v.ajust",c=clusters)
 
 #   Buble que genera taules  estratificades en base a les llistes dels events
 
 HR.ESTR.TOTAL<-llist("d",labels=T)
-
 for (i in 1:length(llistaevents)) {
+  HR.ESTR.TOTAL[[i]]<-HRestratificats(event=llistaevents[[i]][2],t=llistaevents[[i]][1],tipo="v.ajust",c=clusters)}
 
-  
-  HR.ESTR.TOTAL[[i]]<-HRestratificats(event=llistaevents[[i]][2],t=llistaevents[[i]][1],tipo="v.ajust",c=clusters)
+# Fer el mateix amb un map
+# purrr::map2(dtframe_events$event,dtframe_events$temps,~HRestratificats(.x,.y,tipo="v-ajust",c=clusters))
 
-}
-
-
-HR.ESTR.TOTAL[[i]]
 
 ###########################################################################################
-
 #################       FALTA FIGURES K.M i taules resum    amb temps de seguiment i poblaci?
 
 ####    llista d'events utilitzats    #####
@@ -619,7 +612,6 @@ FU_OAD.OT<- ddply(dades, c('GRUPFX.INDEX'), summarise,
 
 ####################  FER LA TAULA RESUM D'EVENTS ######################
 
-
 ##  per cada event 
 
 resumtotal<-data.frame()
@@ -639,7 +631,7 @@ for (i in 1:length(llistaevents)) {
                 PYear = sum(eval(parse(text=text.temps)))/365.25,
                 N.Events= sum(eval(parse(text=text.event))=="Yes"),
                 Event.rate=(N.Events/PYear)*100
-  )
+                )
   
   resum
   
@@ -653,7 +645,7 @@ resumtotal
 
 
 ####    SALVO IMATGE    #####
-save.image("CVD_REAL_OPCIO2_v8.RData")
+save.image(here::here("CVD_REAL_OPCIO2_v11.RData"))
 #
 
 

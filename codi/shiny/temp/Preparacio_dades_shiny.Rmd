@@ -1,0 +1,112 @@
+
+## Preparació de figures per shiny app
+
+```{r}
+# load data in 'global' chunk so it can be shared by all users of the dashboard
+library(datasets)
+library(flexdashboard)
+library(shiny)
+library(ggplot2)
+library(dplyr)
+library(purrr)
+library(tidyr)
+library(Hmisc)
+# library(plotly)
+
+
+load("data_shiny.Rdata")
+
+source("funcions_plots.R")
+
+
+
+
+
+# generar llista de noms de HR.ESTR.TOTAL
+vectordenoms<-HR.ESTR.TOTAL %>% purrr::map(~ rownames(.x)[1]) %>% unlist() 
+# nomenar-los
+HR.ESTR.TOTAL<-purrr::set_names(HR.ESTR.TOTAL,vectordenoms)
+
+#
+llistaevents<-purrr::set_names(llistaevents,vectordenoms)
+
+```
+# Figura covariate plot 
+
+Salvar
+
+```{r, covariates}
+
+# Salvar figures
+
+fig<-fig.covariate + ggplot2::ggtitle("oGLD vs SGLT-2i group")+ ggplot2::theme_minimal() +
+  ggplot2::theme(legend.position = "top")
+
+ggplot2::ggsave("fig.covariate.png",plot=fig,device = "png",dpi = 300)
+
+
+
+
+```
+
+
+
+
+```{r figura, fig.height = 6.5, fig.width = 7}
+
+# <img src="logo_dapcat.jpg" align = "right" width =  "90" height = "50" />
+
+knitr::include_graphics("fig.covariate.png")
+
+
+```
+
+![](figs/fig.coviariate.png)
+
+
+## Figures KM
+
+```{r KMPLOTS}
+
+# 3. Funcio per triar KM en funcio d'outcome  -----------------
+
+graficar_KM_outcome<-function(outcome_nom="All-cause death OTD") {
+    # outcome_nom="All-cause death OTD"
+    plotKM(llistaevents[[outcome_nom]],dades)
+    
+    }
+
+# salvar_plotKM<-function(x=names(llistaevents)[5]){
+#   fig<-graficar_KM_outcome(x)[[1]]
+#   ggplot2::ggsave(plot=fig,filename=paste0("figs/fig_",x,".png"),device = "png",dpi = 72,height=20, width=40,units = "cm")}
+# 
+# names(llistaevents) %>%
+#   purrr::map(~salvar_plotKM(.x))
+# 
+# 
+# pinta_figuraKM<-function(outcome_nom="All-cause death OTD") {
+#   # outcome_nom="All-cause death OTD"
+#   knitr::include_graphics(paste0("figs/fig_",outcome_nom,".png"))
+#   }
+# 
+# outcome_nom="All-cause death OTD"
+# pinta_figuraKM(outcome_nom)
+
+
+```
+
+
+## Salvar dades perDashboard
+
+```{r}
+
+## 
+
+
+save(dt_HR,HR.ESTR.TOTAL,llistaevents, file="dades_shiny_flex.Rdata")
+
+saveRDS(select(dades,-idp),file = "dades_compres.Rds")
+
+
+```
+

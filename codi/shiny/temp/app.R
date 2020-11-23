@@ -14,10 +14,11 @@ library(dplyr)
 library(purrr)
 library(tidyr)
 library(Hmisc)
+library(plotly)
 
-# Carrega de dades i funcions
-# load(here::here("shiny","data_shiny.Rdata"))
-# source(here::here("shiny","funcions_plots.R"))
+# # Carrega de dades i funcions
+# load(here::here("codi/shiny","data_shiny.Rdata"))
+# source(here::here("codi/shiny","funcions_plots.R"))
 
 load("data_shiny.Rdata")
 
@@ -54,6 +55,7 @@ forest.plot.choice.strat<-function(outcome_nom="All-cause death OTD") {
     
     #Graficar-lo 
     HR.ESTR.TOTAL[[outcome_nom]] %>% 
+        filter(!is.na(HR) & EVENTS>1) %>% 
         transmute(outcome=outcome_nom,
                   label=rownames(.) %>% stringr::str_replace("Adj1|Adj2",""),
                   grups=stringr::str_remove(Subgroup,"Age|CKD"),
@@ -61,10 +63,9 @@ forest.plot.choice.strat<-function(outcome_nom="All-cause death OTD") {
                   grups=label,
                   HR,IC951,IC952) %>%
         forest.plot.HR(label="label",mean="HR",lower="IC951",upper="IC952",label_X="Favors SGLT-2      HR (95% CI)       Favors oGLD-2",
-                       intercept=1,nivell="outcome",factor1="grups",label_Xvertical = "Subgroups")
+                       intercept=1,nivell="outcome",factor1="grups",label_Xvertical = "Subgroups", color=F)
 
     }
-
 
 
 # 3. Funcio per triar KM en funcio d'outcome  -----------------
@@ -91,7 +92,9 @@ ui <- fluidPage(
           
           selectInput("metode2",label="Choice the outcome :", choices= names(llistaevents)   ,multiple = F),
           
-          img( src = "https://avatars2.githubusercontent.com/u/57066591?s=200&v=4", align = "right", width =  70, height = 50),
+          # img( src = "https://avatars2.githubusercontent.com/u/57066591?s=200&v=4", align = "right", width =  70, height = 50),
+          
+          img( src = 'logo_dapcat.jpg', align = "right", width =  70, height = 50),
           
           img( src = "https://www.idiapjgol.org/images/logo.png", align = "center",width =  90, height = 40)
         
@@ -102,7 +105,7 @@ ui <- fluidPage(
         mainPanel(
           
           tabsetPanel(
-                    tabPanel("Forest plot by method", plotOutput( "distPlot0")),
+                    tabPanel("Forest plot by method", plotlyOutput( "distPlot0")),
                     tabPanel("Forest plot by outcome",plotOutput("distPlot1")),
                     tabPanel("Kaplan-Meier by outcome",plotOutput("distPlot2"))
                     
@@ -120,7 +123,7 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
 
-  output$distPlot0 <- renderPlot({forest.plot.choice(input$metode1)})
+  output$distPlot0 <- renderPlotly({forest.plot.choice(input$metode1) %>% ggplotly() })
   output$distPlot1 <- renderPlot({forest.plot.choice.strat(input$metode2)})
   output$distPlot2 <- renderPlot({graficar_KM_outcome(input$metode2)})
   
@@ -128,3 +131,4 @@ server <- function(input, output) {
 
 # Run the application 
 shinyApp(ui = ui, server = server)
+

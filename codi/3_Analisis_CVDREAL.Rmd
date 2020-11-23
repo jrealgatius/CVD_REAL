@@ -48,14 +48,28 @@ library("data.table")
 library("plyr")
 library("survminer")
 library("MatchIt")
+library("dplyr")
+library(purrr)
+library(tidyr)
 
 #  obrir fitxer salvat amb tots els objectes
+
+conductor_variables<-here::here("VARIABLES_R.xls")
+
+
 
 ```
 
 # Estado
 
 ## Actualizaciones
+
+> 10/2020
+
+&check; Covariate plot  <br/>
+&check; Curbas de incidencia de eventos <br/>
+&check; Cambio de etiquetas  <br/>
+&check; Tiempos medianos y máximo (Tabla 9) <br/>
 
 > 09/2020
 
@@ -81,9 +95,13 @@ New user receiving or dispensed prescription of SGLT-2i medication or other GLD,
 
 ```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
 
+load(here::here("CVD_REAL_OPCIO2_v9.RData"))
+source(here::here("codi","funcions_CVDREAL.R"))
 
+# Reetiqueto dades i dadesDF 
+dades<-etiquetar(dades,taulavariables=here::here('VARIABLES_R.xls'))
+dadesDF<-etiquetar(dadesDF,taulavariables=here::here('VARIABLES_R.xls'))
 
-load("CVD_REAL_OPCIO2_v8.RData")
 
 
 ```
@@ -91,9 +109,9 @@ load("CVD_REAL_OPCIO2_v8.RData")
 # 9.1    Propensity Scores output
 
 
-# Propensity results
+## Propensity results
 
-# Table 7. Variables to be considered for propensity score calculations. As a general rule, a "non-parsimonious" propensity score will be applied, as a consequence all relevant data that is available should be included. 
+## Table 7. Variables to be considered for propensity score calculations. As a general rule, a "non-parsimonious" propensity score will be applied, as a consequence all relevant data that is available should be included. 
 
 For matching the following method is proposed: nearest neighbor caliper width of 0.25 multiplied by the standard deviation of the propensity score distribution (Stuart 2010). 
 
@@ -105,14 +123,27 @@ Matchit is the main command of the package MatchIt, which enables parametric mod
 
 
 ```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
-
-
 kable(m.out$model[1],caption="Logistic model used in the propensity score",digits=3) %>% kableExtra::kable_styling()
 kable(summary(m.out)$nn,caption="Summary table of matched data") %>% kableExtra::kable_styling()
 kable(summary(m.out)$sum.all,caption="Sum all",digits=4) %>% kableExtra::kable_styling()
 kable(summary(m.out)$sum.matched,caption="Sum.matched") %>% kableExtra::kable_styling()
 kable(summary(m.out)$reduction,caption="Reduction") %>% kableExtra::kable_styling()
+```
 
+# Covariate plot 
+
+
+```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
+
+cols_a_borrar<-c("iyearsem","qmedea","CKD.COMBI")
+# fig.covariate<- covariate_plot(m.out,vars_remove = cols_a_borrar,etiquetar = T,taulavariables=conductor_variables,camp_descripcio="descripcio2")
+
+dades_covariate<-prep_dades_m.out_covariate(m.out,vars_remove = cols_a_borrar,etiquetar = T,taulavariables=conductor_variables,camp_descripcio="descripcio2")
+
+fig.covariate<-covariate_plot_dades(dades_covariate,var="name",stat="stat",title="Covariate plot \n oGLD vs SGLT-2i group", labx="Standardized mean difference") 
+
+
+fig.covariate
 
 ```
 
@@ -187,16 +218,58 @@ kable (FU_OAD,caption="Number of patients and follow-up time (Years)",digits=2) 
 ```
 
 
-# Table 9. Distribution of index medications post-match (OT)
+# Table 9. Distribution of index medications post-match (OT and ITT) and follow-up time 
 
 ```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
 
 
-kable (FU_ISGLT2.OT, caption="Number of patients and follow-up time (Years)",digits=2) %>% kableExtra::kable_styling()
+kable (FU_ISGLT2.OT, caption="Number of patients and follow-up time on treatment (Years)",digits=2) %>% kableExtra::kable_styling()
 
-kable (FU_OAD.OT,caption="Number of patients and follow-up time (Years)",digits=2) %>% kableExtra::kable_styling()
+kable (FU_OAD.OT,caption="Number of patients and follow-up time on treatment (Years)",digits=2) %>% kableExtra::kable_styling()
 
 
+
+ddply(dades, c('grup'), summarise,
+                  N    = length(temps.otd),
+                  sum   = sum(temps.otd/365.25),
+                  mean = mean(temps.otd/365.25),
+                  sd   = sd(temps.otd/365.25),
+                  median= median(temps.otd/365.25),
+                  min   = min(temps.otd/365.25),
+                  max   = max(temps.otd/365.25)) %>% 
+  kable(caption="Number of patients and follow-up time On treatment (Years)",digits = 2) %>% kableExtra::kable_styling()
+
+
+dades %>% summarise (N = length(temps.otd),
+                  sum   = sum(temps.otd/365.25),
+                  mean = mean(temps.otd/365.25),
+                  sd   = sd(temps.otd/365.25),
+                  median= median(temps.otd/365.25),
+                  min   = min(temps.otd/365.25),
+                  max   = max(temps.otd/365.25)) %>% 
+  kable(caption="Number of patients and follow-up time On treatment (Years)",digits = 2) %>% kableExtra::kable_styling()
+
+
+
+ddply(dades, c('grup'), summarise,
+                  N    = length(temps),
+                  sum   = sum(temps/365.25),
+                  mean = mean(temps/365.25),
+                  sd   = sd(temps/365.25),
+                  median= median(temps/365.25),
+                  min   = min(temps/365.25),
+                  max   = max(temps/365.25)) %>% 
+  kable(caption="Number of patients and follow-up time ITT (Years)",digits = 2) %>% kableExtra::kable_styling()
+
+
+dades %>% summarise(N    = length(temps),
+                  sum   = sum(temps/365.25),
+                  mean = mean(temps/365.25),
+                  sd   = sd(temps/365.25),
+                  median= median(temps/365.25),
+                  min   = min(temps/365.25),
+                  max   = max(temps/365.25)) %>% 
+  kable(caption="Number of patients and follow-up time ITT (Years)",digits = 2) %>% kableExtra::kable_styling()
 
 
 ```
@@ -268,83 +341,7 @@ kable (HRTOTALS_NOUS,caption="Output from Cox regression models",digits=3) %>% k
 ```
 
 
-
 # Forest plot de HR's por tipo de evento
-
-```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
-
-
-# Funció forest.plot 
-
-forest.plot.HR<-function(dadesmodel=dt_estimacions,label="Categoria",mean="estimate",lower="Linf",upper="Lsup",label_X="OR (95% CI)",
-                         intercept=0,
-                         nivell="outcome", factor1="type",color=TRUE, label_Xvertical="Cardiovascular event") {
-
-  # dadesmodel=dt_temp
-  # label="grups"
-  # mean="HR"
-  # lower="IC951"
-  # upper="IC952"
-  # label_X="HR (95% CI)"
-  # intercept=1
-  # nivell="outcome"
-  # factor1="Method"
-  # color=F
-  # label_Xvertical="Cardiovascular event"
-
-  # Generar data set 
-  dadesmodel <- dadesmodel %>% select(valor=!!mean,Linf=!!lower,Lsup=!!upper,nivell=!!nivell, factor1=!!factor1)
-  
-  ## Preparar taula (Genero etiqueta)
-  taula_betas<-dadesmodel %>% mutate(etiqueta=paste0("     ",factor1),
-                                     Group = paste0(factor1))
-  
-  # Afegir fila com un punt nivell per outcome i genero label de group
-  taula_betas<-taula_betas %>% split(.$nivell) %>% 
-    map_dfr(~add_row(.x,.before = 0),.id = "outcome" ) %>% 
-    mutate (etiqueta2=if_else(is.na(etiqueta),outcome,"")) %>% 
-    mutate (etiqueta=if_else(is.na(etiqueta),outcome,etiqueta))
-  
-  # AFegir etiqueta 3 mes centrada
-  taula_betas<-taula_betas %>% mutate(etiqueta3=lag(etiqueta2),
-                                      etiqueta3=if_else(is.na(etiqueta3),"",etiqueta3))
-  
-  # Reordenar outcomes segons origen de taula inicial
-  dt_ordre<-dadesmodel %>% distinct(outcome=nivell) %>% mutate(seq=seq(1:n()))
-  taula_betas<-taula_betas %>% left_join(dt_ordre,by="outcome") %>% arrange(seq)
-  
-  # Generar id 
-  taula_betas<-taula_betas %>% mutate(id=seq(n())) %>% mutate(id=n()-id+1)
-  
-  # REomplir missings en factor1 i factor2
-  taula_betas<-taula_betas %>% fill(c(factor1,Group),.direction="updown")
-  
-  # Relevel mateix ordre tal com surt taula   
-  ordre_levels<-taula_betas %>% pull(Group) %>% unique()
-  taula_betas$Group<-factor(taula_betas$Group, levels = ordre_levels)
-  
-
-  fp <- ggplot(data=taula_betas,aes(x=id, y=valor, ymin=Linf, ymax=Lsup)) +
-    geom_pointrange(size=0.5) + 
-    geom_hline(yintercept=intercept, lty=1,colour="grey") +  # add a dotted line at x=1 after flip
-    coord_flip() +  # flip coordinates (puts labels on y axis)
-    xlab(label_Xvertical) + ylab(label_X) +
-    scale_x_continuous(breaks=taula_betas %>% pull(id),labels=taula_betas %>% pull(etiqueta))
-  
-  fp<-fp + theme_minimal() + theme(axis.text.y = element_text(hjust = 0,vjust=0,size=10)) 
-  
-  # if (color) {fp<-fp + geom_point(aes(color=Group),size=3)} else 
-  # {fp<-fp + geom_point(aes(shape=Group),size=3)}
-  
-  # Add banda d'error
-  # fp<-fp + geom_hline(yintercept = c(intercept+0.1,intercept-0.1),linetype=2)
-  
-  fp 
-  
-}
-
-```
-
 
 
 ```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
@@ -389,10 +386,6 @@ dt_temp9<-
   dplyr::bind_cols(tibble::as.tibble(hr_fa.resum))
 
 
-
-library(dplyr)
-library(purrr)
-library(tidyr)
 dt_HR<-dt_temp1 %>% 
   bind_rows(dt_temp2) %>% bind_rows(dt_temp3) %>% bind_rows(dt_temp4) %>% bind_rows(dt_temp5) %>% bind_rows(dt_temp6) %>% bind_rows(dt_temp7) %>%     
   bind_rows(dt_temp8) %>% bind_rows(dt_temp9) %>% 
@@ -414,6 +407,9 @@ forest.plot.HR(dadesmodel=dt_temp,label="grups",mean="HR",lower="IC951",upper="I
 
 ```
 
+
+
+
 # Forest plot de HR's per subgrups per cada Outcome
 
 
@@ -424,6 +420,7 @@ forest.plot.HR(dadesmodel=dt_temp,label="grups",mean="HR",lower="IC951",upper="I
 
 # # Generar forest plot dels HR estratificats per un outcome 
 # 
+
 # HR.ESTR.TOTAL[1][[1]] %>%
 #   transmute(outcome="Heart failure ITT",
 #             label=rownames(.) %>% stringr::str_replace("Adj1|Adj2",""),
@@ -433,17 +430,21 @@ forest.plot.HR(dadesmodel=dt_temp,label="grups",mean="HR",lower="IC951",upper="I
 #             HR,IC951,IC952) %>%
 #   forest.plot.HR(label="label",mean="HR",lower="IC951",upper="IC952",label_X="HR (95% CI)",intercept=1,nivell="outcome",factor1="grups",label_Xvertical = "Subgroups")
 
-
-
 # Generar tots els forest plot per cada outcome
 HR.ESTR.TOTAL %>% 
   map(~ transmute(.x,label=rownames(.) %>% stringr::str_replace("Adj1|Adj2",""),
                                   grups=stringr::str_remove(Subgroup,"Age|CKD"),
                                   label=paste0(label,":",grups),
                                   grups=label,HR,IC951,IC952)) %>% 
+  map(~ filter(.x,!is.na(HR))) %>%  # Borrar fila amb NA's
   map(~ mutate (.x,outcome=pull(.x,label)[[1]] %>% stringr::str_remove(":Total"))) %>% 
   map(~ forest.plot.HR(.x,label="label",mean="HR",lower="IC951",upper="IC952",label_X="HR (95% CI)",intercept=1,nivell="outcome",factor1="grups",label_Xvertical = "Subgroups")) %>% 
   print() 
+
+
+# Cambiar nom primera fila OTD per OT ()
+for (i in 1:length(HR.ESTR.TOTAL)) {rownames(HR.ESTR.TOTAL[[i]])[1]<-stringr::str_replace (rownames(HR.ESTR.TOTAL[[i]])[1], "OTD","OT")}
+
 
 
 ```
@@ -455,41 +456,6 @@ HR.ESTR.TOTAL %>%
 ```{r, message=FALSE, warning=FALSE, include=T, echo=FALSE,size="huge"}
 
 
-##############      K-M   plot     #####
-plotKM=function(y=c("temps.otd","exitus.otd"),dt=dades) {
-  
-  # y=llistaevents[[2]]
-  # dt=dades
-  # y=c("temps.otd","exitus.otd")
-  
-  y<-unlist(y,use.names = F)
-  
-  temps=sym(y[[1]])
-  event=sym(y[[2]])
-  caption=Hmisc::label(dt[[y[2]]])
-  
-  dt<-dt %>% select(grup,temps=!!temps,event=!!event) %>% mutate(event=(event=="Yes") %>% as.numeric())
-  
-  fit<- survival::survfit(survival::Surv(temps,event) ~ grup, data = dt) 
-  
-  
-  # Basic survival curves
-  p <- survminer::ggsurvplot(fit, data = dt,
-                  main = "Survival curve",
-                  title= caption,
-                  size = 0.5,
-                  ylim = c(0.95,1),
-                  xlim = c(0,365),
-                  break.x.by=90,
-                  xlab = "Time in days",
-                  risk.table = F,
-                  censor.shape="|", censor.size = 1,
-                  legend.labs=c("oGLD","SGLT-2")) 
-  p
-}
-
-
-
 
 
 
@@ -498,9 +464,7 @@ plotKM=function(y=c("temps.otd","exitus.otd"),dt=dades) {
 #
 ####                        K.M DE TOTS ELS EVENTS                  ####
 
-
 llistaevents %>% map(~plotKM(.x))
-
 
 
 
@@ -546,15 +510,29 @@ kable(HR.ESTR.TOTAL[18],caption=row.names(HR.ESTR.TOTAL[[18]])[1],digits=3) %>% 
 
 ```
 
+```{r preparar_shiny, include=F}
+
+# generar llista de noms de HR.ESTR.TOTAL
+vectordenoms<-HR.ESTR.TOTAL %>% purrr::map(~ rownames(.x)[1]) %>% unlist() 
+
+# nomenar HR.ESTR.TOTAL
+HR.ESTR.TOTAL<-purrr::set_names(HR.ESTR.TOTAL,vectordenoms)
+
+llistaevents<-purrr::set_names(llistaevents,vectordenoms)
+
+
+```
+
 
 ```{r}
 
 # Salvar objectes per shiny 
 
+dades<-dades %>% select(grup,llistaevents %>% unlist(use.names = F))
 
-dades<-dades %>% select(idp,grup,llistaevents %>% unlist(use.names = F))
+saveRDS(dades,file = here::here("codi/shiny","dades_compres.Rds"))
 
-save(dades,dt_HR,HR.ESTR.TOTAL,llistaevents, file=here::here("shiny/dades","data_shiny.Rdata"))
+save(dt_HR,HR.ESTR.TOTAL,llistaevents,dades_covariate, file=here::here("codi/shiny","dades_shiny_flex.Rdata"))
 
 
 
